@@ -11,8 +11,10 @@ import {
   Barcode,
   ShoppingCart,
   Package,
-  X
+  X,
+  LayoutDashboard
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Product, CartItem, Language, User } from '../../types';
 import { TRANSLATIONS, VAT_RATE, CATEGORIES } from '../../constants';
 import { storageService } from '../../services/storageService';
@@ -98,6 +100,7 @@ export default function POSScreen({ language }: POSScreenProps) {
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const subtotal = total / (1 + VAT_RATE);
+  const tax = total - subtotal;
   const vat = total - subtotal;
 
   const handleCheckout = (method: 'cash' | 'card') => {
@@ -144,69 +147,45 @@ export default function POSScreen({ language }: POSScreenProps) {
   };
 
   return (
-    <div className="h-full flex flex-col lg:flex-row gap-6">
+    <div className="h-full flex flex-col md:flex-row gap-6">
       {/* Left Side: Product Selection */}
       <div className="flex-1 flex flex-col min-w-0 gap-4">
         {/* Search & Filters */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input
-              ref={barcodeInputRef}
-              type="text"
-              placeholder={t.searchProducts}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleBarcodeScan}
-            />
-            <Barcode className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all
-                  ${selectedCategory === cat 
-                    ? 'bg-indigo-600 text-white shadow-md' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-6 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border-2
+                ${selectedCategory === cat 
+                  ? 'border-orange-500 text-orange-600 bg-orange-50/50' 
+                  : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
         {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pr-2">
+        <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-4 pr-2">
           {filteredProducts.map(product => (
             <button
               key={product.id}
               onClick={() => addToCart(product)}
-              className="group bg-white dark:bg-slate-900 p-3 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 transition-all text-left flex flex-col h-full"
+              className="group bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 hover:border-orange-500 dark:hover:border-orange-500 transition-all text-center flex flex-col items-center gap-3"
             >
-              <div className="aspect-square rounded-xl bg-slate-100 dark:bg-slate-800 mb-3 overflow-hidden relative">
+              <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden shadow-inner border-4 border-white dark:border-slate-700">
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" referrerPolicy="no-referrer" />
+                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-700">
-                    <Package size={40} />
-                  </div>
-                )}
-                {product.stock < 10 && (
-                  <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                    {product.stock} left
+                  <div className="w-full h-full flex items-center justify-center text-slate-300">
+                    <Package size={32} />
                   </div>
                 )}
               </div>
-              <h3 className="font-bold text-sm dark:text-white line-clamp-2 mb-1">{product.name}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{product.category}</p>
-              <div className="mt-auto flex items-center justify-between">
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold">{product.price.toFixed(2)} SAR</span>
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                  <Plus size={18} />
-                </div>
+              <div>
+                <h3 className="font-bold text-sm dark:text-white line-clamp-2 mb-1">{product.name}</h3>
+                <span className="text-slate-900 dark:text-white font-black text-base">${product.price.toFixed(2)}</span>
               </div>
             </button>
           ))}
@@ -214,115 +193,112 @@ export default function POSScreen({ language }: POSScreenProps) {
       </div>
 
       {/* Right Side: Cart & Checkout */}
-      <div className="w-full lg:w-96 flex flex-col gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShoppingCart size={20} className="text-indigo-600" />
-              <h2 className="font-bold dark:text-white">{t.cart}</h2>
+      <div className="w-full md:w-[400px] flex flex-col gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold text-sm border border-slate-200 dark:border-slate-700">
+              <Plus size={18} />
+              Add Customer
+            </button>
+            <div className="flex gap-2">
+              <button className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700">
+                <Plus size={18} />
+              </button>
+              <button className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700">
+                <LayoutDashboard size={18} />
+              </button>
+              <button className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700">
+                <motion.div whileTap={{ rotate: 180 }}>
+                  <Plus size={18} className="rotate-45" />
+                </motion.div>
+              </button>
             </div>
-            <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-2 py-1 rounded-full">
-              {cart.reduce((s, i) => s + i.quantity, 0)} items
-            </span>
           </div>
 
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 opacity-50">
-                <ShoppingCart size={48} />
-                <p>{t.emptyCart}</p>
+              <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-4 opacity-50">
+                <ShoppingCart size={64} />
+                <p className="font-bold">{t.emptyCart}</p>
               </div>
             ) : (
-              cart.map(item => (
-                <div key={item.id} className="flex items-center gap-3 group">
-                  <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <Package size={20} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold dark:text-white truncate">{item.name}</h4>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        step="0.01"
-                        className="w-20 text-xs bg-transparent border-b border-slate-200 dark:border-slate-700 focus:border-indigo-500 outline-none dark:text-slate-400"
-                        value={item.price}
-                        onChange={(e) => setItemPrice(item.id, parseFloat(e.target.value) || 0)}
-                      />
-                      <span className="text-[10px] text-slate-500">SAR</span>
+              cart.map((item, index) => (
+                <div key={item.id} className="space-y-3">
+                  <div className="flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 font-bold text-sm">{index + 1}</span>
+                      <h4 className="text-sm font-bold dark:text-white">{item.name}</h4>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-black dark:text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                      <button 
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <input
-                      type="number"
-                      className="text-sm font-bold w-10 text-center bg-transparent border-b border-slate-200 dark:border-slate-700 outline-none dark:text-white"
-                      value={item.quantity}
-                      onChange={(e) => setItemQuantity(item.id, parseInt(e.target.value) || 0)}
-                    />
-                    <button 
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200"
-                    >
-                      <Plus size={14} />
-                    </button>
-                    <button 
-                      onClick={() => removeFromCart(item.id)}
-                      className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 flex items-center justify-center hover:bg-red-100"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  
+                  {/* Expandable details for the last added item */}
+                  {index === cart.length - 1 && (
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-slate-400">Quantity</label>
+                          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1">
+                            <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Minus size={14}/></button>
+                            <input 
+                              type="number" 
+                              className="w-full text-center font-bold text-sm bg-transparent outline-none dark:text-white" 
+                              value={item.quantity}
+                              onChange={(e) => setItemQuantity(item.id, parseInt(e.target.value) || 0)}
+                            />
+                            <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Plus size={14}/></button>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase text-slate-400">Discount(%)</label>
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2">
+                            <input type="number" className="w-full text-right font-bold text-sm bg-transparent outline-none dark:text-white" defaultValue={0} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
 
           {/* Summary */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
-              <span>{t.subtotal}</span>
-              <span>{subtotal.toFixed(2)} SAR</span>
+          <div className="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500 font-medium">Subtotal</span>
+              <span className="font-bold dark:text-white">${subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
-              <span>{t.vat}</span>
-              <span>{vat.toFixed(2)} SAR</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500 font-medium">Tax</span>
+              <span className="font-bold dark:text-white">${tax.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
-              <span>{t.total}</span>
-              <span className="text-indigo-600 dark:text-indigo-400">{total.toFixed(2)} SAR</span>
+            <div className="flex justify-between text-lg pt-2 border-t border-slate-200 dark:border-slate-700">
+              <span className="font-black dark:text-white">Payable Amount</span>
+              <span className="font-black text-orange-600 dark:text-orange-400">${total.toFixed(2)}</span>
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="p-4 grid grid-cols-2 gap-3">
-            <button
-              disabled={cart.length === 0 || isProcessing}
-              onClick={() => handleCheckout('cash')}
-              className="flex flex-col items-center gap-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white rounded-xl transition-all shadow-lg shadow-emerald-200 dark:shadow-none"
-            >
-              <Banknote size={20} />
-              <span className="text-xs font-bold">{t.cash}</span>
-            </button>
-            <button
-              disabled={cart.length === 0 || isProcessing}
-              onClick={() => handleCheckout('card')}
-              className="flex flex-col items-center gap-1 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 text-white rounded-xl transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
-            >
-              <CreditCard size={20} />
-              <span className="text-xs font-bold">{t.card}</span>
-            </button>
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <button className="flex items-center justify-center gap-2 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold shadow-lg shadow-orange-100 transition-all">
+                <motion.div whileTap={{ scale: 0.9 }}>Hold Order</motion.div>
+              </button>
+              <button 
+                onClick={() => handleCheckout('cash')}
+                disabled={cart.length === 0 || isProcessing}
+                className="flex items-center justify-center gap-2 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 transition-all"
+              >
+                <motion.div whileTap={{ scale: 0.9 }}>Proceed</motion.div>
+              </button>
+            </div>
           </div>
         </div>
       </div>

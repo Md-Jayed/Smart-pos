@@ -1,5 +1,6 @@
-import React from 'react';
-import { STORE_INFO, TRANSLATIONS } from '../../constants';
+import React, { useEffect, useState } from 'react';
+import { TRANSLATIONS } from '../../constants';
+import { storageService } from '../../services/storageService';
 import { Language } from '../../types';
 
 interface ReceiptProps {
@@ -8,19 +9,24 @@ interface ReceiptProps {
 }
 
 export default function Receipt({ sale, language }: ReceiptProps) {
+  const [storeInfo, setStoreInfo] = useState(storageService.getStoreInfo());
   const t = TRANSLATIONS[language];
   const isRTL = language === 'ar';
+
+  useEffect(() => {
+    setStoreInfo(storageService.getStoreInfo());
+  }, []);
 
   return (
     <div className="receipt font-mono text-xs text-black bg-white p-4 w-[80mm] mx-auto" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="text-center mb-4">
-        <h2 className="text-lg font-bold uppercase">{STORE_INFO.name}</h2>
-        <h2 className="text-lg font-bold">{STORE_INFO.nameAr}</h2>
-        <p>{STORE_INFO.address}</p>
-        <p>{STORE_INFO.addressAr}</p>
-        <p>CR: {STORE_INFO.crNumber}</p>
-        <p>VAT: {STORE_INFO.vatNumber}</p>
-        <p>Phone: {STORE_INFO.phone}</p>
+        <h2 className="text-lg font-bold uppercase">{storeInfo.name}</h2>
+        <h2 className="text-lg font-bold">{storeInfo.nameAr}</h2>
+        <p>{storeInfo.address}</p>
+        <p>{storeInfo.addressAr}</p>
+        <p>CR: {storeInfo.crNumber}</p>
+        <p>VAT: {storeInfo.vatNumber}</p>
+        <p>Phone: {storeInfo.phone}</p>
       </div>
 
       <div className="border-t border-b border-black border-dashed py-2 mb-4">
@@ -73,14 +79,8 @@ export default function Receipt({ sale, language }: ReceiptProps) {
       </div>
 
       <div className="text-center mt-6 pt-4 border-t border-black border-dashed">
-        <p className="mb-1">{STORE_INFO.thankYou}</p>
-        <p>{STORE_INFO.thankYouAr}</p>
-        <div className="mt-4 flex justify-center">
-          {/* Placeholder for QR Code - In real app, use a QR generator library */}
-          <div className="w-24 h-24 bg-slate-100 border border-black flex items-center justify-center text-[8px] text-center">
-            ZATCA QR CODE<br/>PLACEHOLDER
-          </div>
-        </div>
+        <p className="mb-1">{storeInfo.thankYou}</p>
+        <p>{storeInfo.thankYouAr}</p>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import DashboardScreen from './components/Dashboard/DashboardScreen';
 import POSScreen from './components/POS/POSScreen';
 import InventoryScreen from './components/Inventory/InventoryScreen';
+import SettingsScreen from './components/Settings/SettingsScreen';
 import { User, Language } from './types';
 import { storageService } from './services/storageService';
 
@@ -15,7 +16,7 @@ const DEFAULT_USER: User = {
 
 export default function App() {
   const [user] = useState<User>(DEFAULT_USER);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('pos');
   const [language, setLanguage] = useState<Language>('en');
   const [darkMode, setDarkMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -54,6 +55,8 @@ export default function App() {
         return <POSScreen language={language} />;
       case 'inventory':
         return <InventoryScreen language={language} />;
+      case 'settings':
+        return <SettingsScreen language={language} />;
       default:
         return <DashboardScreen language={language} />;
     }

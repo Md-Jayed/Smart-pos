@@ -67,7 +67,7 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
           <input
             type="text"
             placeholder={t.searchProducts}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white shadow-sm"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white shadow-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -77,7 +77,7 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
             setEditingProduct({ name: '', price: 0, stock: 0, category: 'Grocery' });
             setIsModalOpen(true);
           }}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 dark:shadow-none transition-all"
         >
           <Plus size={20} />
           {t.addProduct}
@@ -89,64 +89,53 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse" dir={isRTL ? 'rtl' : 'ltr'}>
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
-                <th className="px-6 py-4 font-bold">{t.name}</th>
-                <th className="px-6 py-4 font-bold">{t.category}</th>
-                <th className="px-6 py-4 font-bold">{t.price}</th>
-                <th className="px-6 py-4 font-bold">{t.stock}</th>
-                <th className="px-6 py-4 font-bold">{t.sku}</th>
-                <th className="px-6 py-4 font-bold text-center">Actions</th>
+              <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider">
+                <th className="px-4 py-3 font-bold">{t.name}</th>
+                <th className="px-4 py-3 font-bold">{t.category}</th>
+                <th className="px-4 py-3 font-bold">{t.price}</th>
+                <th className="px-4 py-3 font-bold">{t.stock}</th>
+                <th className="px-4 py-3 font-bold">{t.sku}</th>
+                <th className="px-4 py-3 font-bold text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredProducts.map(product => (
                 <tr key={product.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden">
-                        {product.image_url ? (
-                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-300">
-                            <Package size={20} />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm dark:text-white">{product.name}</p>
-                        <p className="text-xs text-slate-500">{product.barcode || 'No barcode'}</p>
-                      </div>
+                  <td className="px-4 py-2">
+                    <div>
+                      <p className="font-bold text-xs dark:text-white">{product.name}</p>
+                      <p className="text-[10px] text-slate-500">{product.barcode || 'No barcode'}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium">
+                  <td className="px-4 py-2">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-medium">
                       {product.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-bold dark:text-white">
-                    {product.price.toFixed(2)} SAR
+                  <td className="px-4 py-2 font-bold text-xs dark:text-white">
+                    {product.price.toFixed(2)}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-bold ${product.stock < 10 ? 'text-red-500' : 'dark:text-white'}`}>
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`font-bold text-xs ${product.stock < 10 ? 'text-red-500' : 'dark:text-white'}`}>
                         {product.stock}
                       </span>
-                      {product.stock < 10 && <AlertTriangle size={14} className="text-red-500" />}
+                      {product.stock < 10 && <AlertTriangle size={12} className="text-red-500" />}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
+                  <td className="px-4 py-2 text-[10px] text-slate-500">
                     {product.sku || '-'}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
+                  <td className="px-4 py-2">
+                    <div className="flex items-center justify-center gap-1">
                       <button 
                         onClick={() => {
                           setEditingProduct(product);
                           setIsModalOpen(true);
                         }}
-                        className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg transition-all"
+                        className="p-1.5 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg transition-all"
                       >
-                        <Edit2 size={18} />
+                        <Edit2 size={16} />
                       </button>
                       <button 
                         onClick={() => setDeleteConfirmId(product.id)}
@@ -232,7 +221,7 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
                     required
                     type="number"
                     step="0.01"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white"
                     value={editingProduct?.price || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct!, price: parseFloat(e.target.value) })}
                   />
@@ -242,7 +231,7 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
                   <input
                     required
                     type="number"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white"
                     value={editingProduct?.stock || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct!, stock: parseInt(e.target.value) })}
                   />
@@ -251,7 +240,7 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t.sku}</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white"
                     value={editingProduct?.sku || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct!, sku: e.target.value })}
                   />
@@ -260,25 +249,10 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t.barcode}</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white"
                     value={editingProduct?.barcode || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct!, barcode: e.target.value })}
                   />
-                </div>
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t.imageUrl}</label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                      placeholder="https://..."
-                      value={editingProduct?.image_url || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct!, image_url: e.target.value })}
-                    />
-                    <button type="button" className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-200">
-                      <Upload size={20} />
-                    </button>
-                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -291,7 +265,7 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 dark:shadow-none"
+                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 dark:shadow-none"
                 >
                   {t.save}
                 </button>

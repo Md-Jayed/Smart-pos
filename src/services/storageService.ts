@@ -3,6 +3,19 @@ import { VAT_RATE } from '../constants';
 
 const PRODUCTS_KEY = 'smartpos_products';
 const SALES_KEY = 'smartpos_sales';
+const STORE_INFO_KEY = 'smartpos_store_info';
+
+const DEFAULT_STORE_INFO = {
+  name: "SmartPOS Retail",
+  nameAr: "سمارت بوس للتجزئة",
+  crNumber: "1234567890",
+  vatNumber: "300012345600003",
+  address: "Riyadh, Saudi Arabia",
+  addressAr: "الرياض، المملكة العربية السعودية",
+  phone: "+966 50 000 0000",
+  thankYou: "Thank you for shopping with us!",
+  thankYouAr: "شكراً لتسوقكم معنا!",
+};
 
 const SEED_PRODUCTS: Product[] = [
   { id: 1, name: "Fresh Milk 1L", sku: "MILK-001", barcode: "6281234567890", category: "Grocery", price: 6.50, cost_price: 4.50, stock: 50, image_url: "https://picsum.photos/seed/milk/400/400" },
@@ -20,6 +33,19 @@ export const storageService = {
     if (!localStorage.getItem(SALES_KEY)) {
       localStorage.setItem(SALES_KEY, JSON.stringify([]));
     }
+    if (!localStorage.getItem(STORE_INFO_KEY)) {
+      localStorage.setItem(STORE_INFO_KEY, JSON.stringify(DEFAULT_STORE_INFO));
+    }
+  },
+
+  // Store Info
+  getStoreInfo: () => {
+    const data = localStorage.getItem(STORE_INFO_KEY);
+    return data ? JSON.parse(data) : DEFAULT_STORE_INFO;
+  },
+
+  saveStoreInfo: (info: any) => {
+    localStorage.setItem(STORE_INFO_KEY, JSON.stringify(info));
   },
 
   // Products
