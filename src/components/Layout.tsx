@@ -68,13 +68,13 @@ export default function Layout({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group
+              className={`w-full flex flex-col items-center justify-center gap-2 py-4 px-1 rounded-xl transition-all duration-200 group
                 ${activeTab === item.id 
                   ? 'bg-orange-50 text-orange-600 border border-orange-200' 
                   : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
             >
               <item.icon size={24} className={`${activeTab === item.id ? 'text-orange-600' : 'group-hover:text-orange-500'}`} />
-              <span className="text-[10px] font-bold uppercase tracking-tight">
+              <span className="text-[9px] font-bold uppercase tracking-tighter text-center leading-none">
                 {item.label}
               </span>
             </button>
@@ -84,10 +84,10 @@ export default function Layout({
         <div className="p-2 border-t border-slate-200 dark:border-slate-800">
           <button
             onClick={onLogout}
-            className="w-full flex flex-col items-center justify-center gap-1 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+            className="w-full flex flex-col items-center justify-center gap-2 py-4 px-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
           >
             <LogOut size={24} />
-            <span className="text-[10px] font-bold uppercase tracking-tight">{t.logout}</span>
+            <span className="text-[9px] font-bold uppercase tracking-tighter text-center leading-none">{t.logout}</span>
           </button>
         </div>
       </aside>

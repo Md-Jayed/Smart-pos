@@ -14,8 +14,8 @@ export default function SettingsScreen({ language }: SettingsScreenProps) {
   const t = TRANSLATIONS[language];
   const isRTL = language === 'ar';
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     storageService.saveStoreInfo(storeInfo);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
@@ -38,6 +38,14 @@ export default function SettingsScreen({ language }: SettingsScreenProps) {
             <p className="text-slate-500 dark:text-slate-400 text-sm">Manage your shop details and invoice header</p>
           </div>
         </div>
+
+        <button
+          onClick={() => handleSave()}
+          className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 dark:shadow-none transition-all"
+        >
+          <Save size={18} />
+          {t.save}
+        </button>
       </div>
 
       <form onSubmit={handleSave} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
