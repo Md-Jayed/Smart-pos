@@ -3,23 +3,23 @@ import Layout from './components/Layout';
 import DashboardScreen from './components/Dashboard/DashboardScreen';
 import POSScreen from './components/POS/POSScreen';
 import InventoryScreen from './components/Inventory/InventoryScreen';
-import LoginScreen from './components/Auth/LoginScreen';
 import { User, Language } from './types';
 
+const DEFAULT_USER: User = {
+  id: 1,
+  name: 'Admin',
+  email: 'admin@smartpos.com',
+  role: 'admin'
+};
+
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user] = useState<User>(DEFAULT_USER);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [language, setLanguage] = useState<Language>('en');
   const [darkMode, setDarkMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Check local storage for session
-    const savedUser = localStorage.getItem('pos_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    
     const savedLang = localStorage.getItem('pos_lang') as Language;
     if (savedLang) setLanguage(savedLang);
     
@@ -36,21 +36,12 @@ export default function App() {
     }
   }, [language, darkMode, isInitialized]);
 
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('pos_user', JSON.stringify(userData));
-  };
-
   const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('pos_user');
+    // Since login is removed, logout just refreshes or does nothing
+    window.location.reload();
   };
 
   if (!isInitialized) return null;
-
-  if (!user) {
-    return <LoginScreen onLogin={handleLogin} language={language} />;
-  }
 
   const renderContent = () => {
     switch (activeTab) {
