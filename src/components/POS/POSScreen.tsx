@@ -32,6 +32,9 @@ export default function POSScreen({ language }: POSScreenProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [activeCartItemId, setActiveCartItemId] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [isCartOpen, setIsCartOpen] = useState(false);
   
   const t = TRANSLATIONS[language];
   const isRTL = language === 'ar';
@@ -56,12 +59,14 @@ export default function POSScreen({ language }: POSScreenProps) {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
+        setActiveCartItemId(product.id);
         return prev.map(item => 
           item.id === product.id 
             ? { ...item, quantity: item.quantity + 1 } 
             : item
         );
       }
+      setActiveCartItemId(product.id);
       return [...prev, { ...product, quantity: 1 }];
     });
   };
@@ -147,9 +152,29 @@ export default function POSScreen({ language }: POSScreenProps) {
   };
 
   return (
-    <div className="h-full flex flex-col md:flex-row gap-6">
+    <div className="h-full flex flex-col md:flex-row gap-6 relative">
       {/* Left Side: Product Selection */}
-      <div className="flex-1 flex flex-col min-w-0 gap-4">
+      <div className={`flex-1 flex flex-col min-w-0 gap-4 ${isCartOpen ? 'hidden md:flex' : 'flex'}`}>
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            ref={barcodeInputRef}
+            type="text"
+            placeholder={t.searchProducts}
+            className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-orange-500 outline-none font-medium dark:text-white"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleBarcodeScan}
+          />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <div className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:block">
+              Barcode Mode
+            </div>
+            <Barcode className="text-slate-300" size={20} />
+          </div>
+        </div>
+
         {/* Search & Filters */}
         <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar">
           {CATEGORIES.map(cat => (
@@ -193,7 +218,20 @@ export default function POSScreen({ language }: POSScreenProps) {
       </div>
 
       {/* Right Side: Cart & Checkout */}
-      <div className="w-full md:w-[400px] flex flex-col gap-4">
+      <div className={`
+        fixed inset-0 z-40 bg-slate-50 dark:bg-slate-950 md:relative md:bg-transparent md:dark:bg-transparent md:z-0
+        ${isCartOpen ? 'flex' : 'hidden md:flex'}
+        flex-col w-full md:w-[400px] gap-4 p-4 md:p-0
+      `}>
+        <div className="flex items-center justify-between md:hidden mb-2">
+          <h2 className="text-xl font-black dark:text-white">Current Order</h2>
+          <button 
+            onClick={() => setIsCartOpen(false)}
+            className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800"
+          >
+            <X size={24} className="dark:text-white" />
+          </button>
+        </div>
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden">
           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold text-sm border border-slate-200 dark:border-slate-700">
@@ -225,7 +263,10 @@ export default function POSScreen({ language }: POSScreenProps) {
             ) : (
               cart.map((item, index) => (
                 <div key={item.id} className="space-y-3">
-                  <div className="flex items-center justify-between group">
+                  <div 
+                    onClick={() => setActiveCartItemId(activeCartItemId === item.id ? null : item.id)}
+                    className={`flex items-center justify-between group p-2 rounded-xl cursor-pointer transition-colors ${activeCartItemId === item.id ? 'bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-200 dark:ring-orange-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                  >
                     <div className="flex items-center gap-3">
                       <span className="text-slate-400 font-bold text-sm">{index + 1}</span>
                       <h4 className="text-sm font-bold dark:text-white">{item.name}</h4>
@@ -233,7 +274,10 @@ export default function POSScreen({ language }: POSScreenProps) {
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-black dark:text-white">${(item.price * item.quantity).toFixed(2)}</span>
                       <button 
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromCart(item.id);
+                        }}
                         className="text-slate-300 hover:text-red-500 transition-colors"
                       >
                         <X size={16} />
@@ -241,9 +285,13 @@ export default function POSScreen({ language }: POSScreenProps) {
                     </div>
                   </div>
                   
-                  {/* Expandable details for the last added item */}
-                  {index === cart.length - 1 && (
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+                  {/* Expandable details for the active item */}
+                  {activeCartItemId === item.id && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4 overflow-hidden"
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold uppercase text-slate-400">Quantity</label>
@@ -259,13 +307,19 @@ export default function POSScreen({ language }: POSScreenProps) {
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-slate-400">Discount(%)</label>
+                          <label className="text-[10px] font-bold uppercase text-slate-400">Unit Price ($)</label>
                           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2">
-                            <input type="number" className="w-full text-right font-bold text-sm bg-transparent outline-none dark:text-white" defaultValue={0} />
+                            <input 
+                              type="number" 
+                              step="0.01"
+                              className="w-full text-right font-bold text-sm bg-transparent outline-none dark:text-white" 
+                              value={item.price}
+                              onChange={(e) => setItemPrice(item.id, parseFloat(e.target.value) || 0)}
+                            />
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
               ))
@@ -287,12 +341,30 @@ export default function POSScreen({ language }: POSScreenProps) {
               <span className="font-black text-orange-600 dark:text-orange-400">${total.toFixed(2)}</span>
             </div>
 
+            {/* Payment Method Selector */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
+              <button 
+                onClick={() => setPaymentMethod('cash')}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${paymentMethod === 'cash' ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-600' : 'text-slate-400'}`}
+              >
+                <Banknote size={18} />
+                <span>Cash</span>
+              </button>
+              <button 
+                onClick={() => setPaymentMethod('card')}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${paymentMethod === 'card' ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-600' : 'text-slate-400'}`}
+              >
+                <CreditCard size={18} />
+                <span>Card</span>
+              </button>
+            </div>
+
             <div className="grid grid-cols-2 gap-4 pt-2">
               <button className="flex items-center justify-center gap-2 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold shadow-lg shadow-orange-100 transition-all">
                 <motion.div whileTap={{ scale: 0.9 }}>Hold Order</motion.div>
               </button>
               <button 
-                onClick={() => handleCheckout('cash')}
+                onClick={() => handleCheckout(paymentMethod)}
                 disabled={cart.length === 0 || isProcessing}
                 className="flex items-center justify-center gap-2 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 transition-all"
               >
@@ -302,6 +374,22 @@ export default function POSScreen({ language }: POSScreenProps) {
           </div>
         </div>
       </div>
+
+      {/* Mobile Cart Toggle Button */}
+      {!isCartOpen && (
+        <button 
+          onClick={() => setIsCartOpen(true)}
+          className="md:hidden fixed bottom-6 right-6 z-30 bg-orange-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold"
+        >
+          <ShoppingCart size={24} />
+          {cart.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
+              {cart.reduce((sum, item) => sum + item.quantity, 0)}
+            </span>
+          )}
+          <span>View Cart</span>
+        </button>
+      )}
 
       {/* Receipt Modal */}
       {showReceipt && lastSale && (

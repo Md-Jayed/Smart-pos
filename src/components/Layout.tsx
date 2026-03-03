@@ -40,7 +40,8 @@ export default function Layout({
   darkMode,
   setDarkMode
 }: LayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const t = TRANSLATIONS[language];
   const isRTL = language === 'ar';
 
@@ -55,9 +56,23 @@ export default function Layout({
 
   return (
     <div className={`min-h-screen flex bg-slate-50 ${darkMode ? 'dark' : ''} ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Sidebar Overlay for Mobile */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
       <aside 
-        className={`bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800 transition-all duration-300 z-30 fixed md:relative h-full w-20 flex flex-col`}
+        className={`bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800 transition-all duration-300 z-50 fixed md:relative h-full w-20 flex flex-col
+          ${isSidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} md:translate-x-0`}
       >
         <div className="p-4 flex items-center justify-center border-b border-slate-200 dark:border-slate-800">
           <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-orange-200">R</div>
@@ -97,22 +112,43 @@ export default function Layout({
         {/* Header */}
         <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4 flex-1">
-            <h1 className="text-xl font-black dark:text-white tracking-tight">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-400 md:hidden"
+            >
+              {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+
+            <h1 className="text-xl font-black dark:text-white tracking-tight shrink-0">
               Restro <span className="text-orange-500">POS</span>
             </h1>
             
-            <div className="relative max-w-md w-full hidden md:block ml-8">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <div className={`relative max-w-md w-full ml-8 ${isSearchOpen ? 'flex fixed inset-x-0 top-0 p-4 bg-white dark:bg-slate-900 z-50 md:relative md:p-0 md:bg-transparent' : 'hidden md:block'}`}>
+              <Search className="absolute left-7 md:left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
                 placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+                className="w-full pl-10 pr-12 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm"
               />
+              {isSearchOpen && (
+                <button 
+                  onClick={() => setIsSearchOpen(false)}
+                  className="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 md:hidden"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 md:hidden"
+              >
+                <Search size={20} />
+              </button>
               <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400">
                 <motion.div whileHover={{ rotate: 180 }} transition={{ duration: 0.5 }}>
                   <LayoutDashboard size={20} />
