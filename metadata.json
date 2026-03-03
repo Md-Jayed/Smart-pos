@@ -1,0 +1,5 @@
+{
+  "name": "SmartPOS Web",
+  "description": "A browser-based POS system for retail businesses with Saudi VAT compliance and 80mm receipt support.",
+  "requestFramePermissions": []
+}
