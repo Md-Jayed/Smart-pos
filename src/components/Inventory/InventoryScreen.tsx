@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Product, Language } from '../../types';
 import { TRANSLATIONS, CATEGORIES } from '../../constants';
+import { storageService } from '../../services/storageService';
 
 interface InventoryScreenProps {
   language: Language;
@@ -32,30 +33,21 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
-    const res = await fetch('/api/products');
-    const data = await res.json();
+  const fetchProducts = () => {
+    const data = storageService.getProducts();
     setProducts(data);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const method = editingProduct?.id ? 'PUT' : 'POST';
-    const url = editingProduct?.id ? `/api/products/${editingProduct.id}` : '/api/products';
-    
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editingProduct)
-    });
-    
+    storageService.saveProduct(editingProduct!);
     setIsModalOpen(false);
     setEditingProduct(null);
     fetchProducts();
   };
 
-  const handleDelete = async (id: number) => {
-    await fetch(`/api/products/${id}`, { method: 'DELETE' });
+  const handleDelete = (id: number) => {
+    storageService.deleteProduct(id);
     setDeleteConfirmId(null);
     fetchProducts();
   };

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { DashboardStats, Language } from '../../types';
 import { TRANSLATIONS } from '../../constants';
+import { storageService } from '../../services/storageService';
 import { motion } from 'motion/react';
 
 interface DashboardScreenProps {
@@ -24,20 +25,12 @@ export default function DashboardScreen({ language }: DashboardScreenProps) {
   const isRTL = language === 'ar';
 
   useEffect(() => {
-    fetchStats();
-    fetchRecentSales();
+    fetchData();
   }, []);
 
-  const fetchStats = async () => {
-    const res = await fetch('/api/stats');
-    const data = await res.json();
-    setStats(data);
-  };
-
-  const fetchRecentSales = async () => {
-    const res = await fetch('/api/sales');
-    const data = await res.json();
-    setRecentSales(data.slice(0, 5));
+  const fetchData = () => {
+    setStats(storageService.getStats());
+    setRecentSales(storageService.getSales().slice(0, 5));
   };
 
   const statCards = [

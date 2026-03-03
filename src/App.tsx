@@ -4,6 +4,7 @@ import DashboardScreen from './components/Dashboard/DashboardScreen';
 import POSScreen from './components/POS/POSScreen';
 import InventoryScreen from './components/Inventory/InventoryScreen';
 import { User, Language } from './types';
+import { storageService } from './services/storageService';
 
 const DEFAULT_USER: User = {
   id: 1,
@@ -20,6 +21,8 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    storageService.init();
+    
     const savedLang = localStorage.getItem('pos_lang') as Language;
     if (savedLang) setLanguage(savedLang);
     

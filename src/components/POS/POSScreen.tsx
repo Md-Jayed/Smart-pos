@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Product, CartItem, Language, User } from '../../types';
 import { TRANSLATIONS, VAT_RATE, CATEGORIES } from '../../constants';
+import { storageService } from '../../services/storageService';
 import Receipt from '../Receipt/Receipt';
 
 interface POSScreenProps {
@@ -39,9 +40,8 @@ export default function POSScreen({ language }: POSScreenProps) {
     barcodeInputRef.current?.focus();
   }, []);
 
-  const fetchProducts = async () => {
-    const res = await fetch('/api/products');
-    const data = await res.json();
+  const fetchProducts = () => {
+    const data = storageService.getProducts();
     setProducts(data);
   };
 
@@ -100,26 +100,21 @@ export default function POSScreen({ language }: POSScreenProps) {
   const subtotal = total / (1 + VAT_RATE);
   const vat = total - subtotal;
 
-  const handleCheckout = async (method: 'cash' | 'card') => {
+  const handleCheckout = (method: 'cash' | 'card') => {
     if (cart.length === 0) return;
     
     setIsProcessing(true);
     try {
-      const res = await fetch('/api/sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: cart,
-          subtotal,
-          vat,
-          total,
-          payment_method: method,
-          cashier_id: 1 // Hardcoded for now
-        })
+      const sale = storageService.createSale({
+        items: cart,
+        subtotal,
+        vat,
+        total,
+        payment_method: method,
+        cashier_id: 1
       });
       
-      const data = await res.json();
-      setLastSale({ ...data, items: cart, subtotal, vat, total, payment_method: method, date: new Date().toISOString() });
+      setLastSale({ ...sale, items: cart, subtotal, vat, total, payment_method: method });
       setCart([]);
       setShowReceipt(true);
       fetchProducts(); // Refresh stock
