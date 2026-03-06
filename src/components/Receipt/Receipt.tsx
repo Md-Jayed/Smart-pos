@@ -19,7 +19,10 @@ export default function Receipt({ sale, language }: ReceiptProps) {
 
   return (
     <div className="receipt font-mono text-xs text-black bg-white p-4 w-[80mm] mx-auto" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="text-center mb-4">
+      <div className="text-center mb-4 flex flex-col items-center">
+        {storeInfo.logoUrl && (
+          <img src={storeInfo.logoUrl} alt="Logo" className="h-12 w-auto object-contain mb-2" referrerPolicy="no-referrer" />
+        )}
         <h2 className="text-lg font-bold uppercase">{storeInfo.name}</h2>
         <h2 className="text-lg font-bold">{storeInfo.nameAr}</h2>
         <p>{storeInfo.address}</p>
@@ -54,7 +57,7 @@ export default function Receipt({ sale, language }: ReceiptProps) {
         </thead>
         <tbody>
           {sale.items.map((item: any) => (
-            <tr key={item.id}>
+            <tr key={item.cartItemId || item.id}>
               <td className="py-1">{item.name}</td>
               <td className="text-center py-1">{item.quantity}</td>
               <td className="text-right py-1">{(item.price * item.quantity).toFixed(2)}</td>

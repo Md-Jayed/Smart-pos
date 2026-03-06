@@ -15,8 +15,8 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Product, CartItem, Language, User } from '../../types';
-import { TRANSLATIONS, VAT_RATE, CATEGORIES } from '../../constants';
+import { Product, CartItem, Language, User, Category } from '../../types';
+import { TRANSLATIONS, VAT_RATE } from '../../constants';
 import { storageService } from '../../services/storageService';
 import Receipt from '../Receipt/Receipt';
 
@@ -26,13 +26,14 @@ interface POSScreenProps {
 
 export default function POSScreen({ language }: POSScreenProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
   const [showReceipt, setShowReceipt] = useState(false);
-  const [activeCartItemId, setActiveCartItemId] = useState<number | null>(null);
+  const [activeCartItemId, setActiveCartItemId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [isCartOpen, setIsCartOpen] = useState(false);
   
@@ -42,12 +43,18 @@ export default function POSScreen({ language }: POSScreenProps) {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
     barcodeInputRef.current?.focus();
   }, []);
 
   const fetchProducts = () => {
     const data = storageService.getProducts();
     setProducts(data);
+  };
+
+  const fetchCategories = () => {
+    const data = storageService.getCategories();
+    setCategories(data);
   };
 
   const addToCart = (product: Product) => {
@@ -57,23 +64,15 @@ export default function POSScreen({ language }: POSScreenProps) {
     }
     
     setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        setActiveCartItemId(product.id);
-        return prev.map(item => 
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-      }
-      setActiveCartItemId(product.id);
-      return [...prev, { ...product, quantity: 1 }];
+      const cartItemId = `${product.id}-${Date.now()}`;
+      setActiveCartItemId(cartItemId);
+      return [...prev, { ...product, cartItemId, quantity: 1 }];
     });
   };
 
-  const updateQuantity = (id: number, delta: number) => {
+  const updateQuantity = (cartItemId: string, delta: number) => {
     setCart(prev => prev.map(item => {
-      if (item.id === id) {
+      if (item.cartItemId === cartItemId) {
         const newQty = Math.max(0, item.quantity + delta);
         return { ...item, quantity: newQty };
       }
@@ -81,26 +80,26 @@ export default function POSScreen({ language }: POSScreenProps) {
     }).filter(item => item.quantity > 0));
   };
 
-  const setItemQuantity = (id: number, qty: number) => {
+  const setItemQuantity = (cartItemId: string, qty: number) => {
     setCart(prev => prev.map(item => {
-      if (item.id === id) {
+      if (item.cartItemId === cartItemId) {
         return { ...item, quantity: Math.max(0, qty) };
       }
       return item;
     }).filter(item => item.quantity > 0));
   };
 
-  const setItemPrice = (id: number, price: number) => {
+  const setItemPrice = (cartItemId: string, price: number) => {
     setCart(prev => prev.map(item => {
-      if (item.id === id) {
+      if (item.cartItemId === cartItemId) {
         return { ...item, price: Math.max(0, price) };
       }
       return item;
     }));
   };
 
-  const removeFromCart = (id: number) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+  const removeFromCart = (cartItemId: string) => {
+    setCart(prev => prev.filter(item => item.cartItemId !== cartItemId));
   };
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -169,7 +168,7 @@ export default function POSScreen({ language }: POSScreenProps) {
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
             <div className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:block">
-              Barcode Mode
+              {t.barcodeMode}
             </div>
             <Barcode className="text-slate-300" size={20} />
           </div>
@@ -177,16 +176,25 @@ export default function POSScreen({ language }: POSScreenProps) {
 
         {/* Search & Filters */}
         <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {CATEGORIES.map(cat => (
+          <button
+            onClick={() => setSelectedCategory('All')}
+            className={`px-6 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border-2
+              ${selectedCategory === 'All' 
+                ? 'border-orange-500 text-orange-600 bg-orange-50/50' 
+                : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          >
+            All
+          </button>
+          {categories.map(cat => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.name)}
               className={`px-6 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border-2
-                ${selectedCategory === cat 
+                ${selectedCategory === cat.name 
                   ? 'border-orange-500 text-orange-600 bg-orange-50/50' 
                   : 'border-transparent text-slate-400 hover:text-slate-600'}`}
             >
-              {cat}
+              {isRTL ? cat.nameAr : cat.name}
             </button>
           ))}
         </div>
@@ -224,7 +232,7 @@ export default function POSScreen({ language }: POSScreenProps) {
         flex-col w-full md:w-[400px] gap-4 p-4 md:p-0
       `}>
         <div className="flex items-center justify-between md:hidden mb-2">
-          <h2 className="text-xl font-black dark:text-white">Current Order</h2>
+          <h2 className="text-xl font-black dark:text-white">{t.currentOrder}</h2>
           <button 
             onClick={() => setIsCartOpen(false)}
             className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800"
@@ -236,7 +244,7 @@ export default function POSScreen({ language }: POSScreenProps) {
           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl font-bold text-sm border border-slate-200 dark:border-slate-700">
               <Plus size={18} />
-              Add Customer
+              {t.addCustomer}
             </button>
             <div className="flex gap-2">
               <button className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -262,10 +270,10 @@ export default function POSScreen({ language }: POSScreenProps) {
               </div>
             ) : (
               cart.map((item, index) => (
-                <div key={item.id} className="space-y-3">
+                <div key={item.cartItemId} className="space-y-3">
                   <div 
-                    onClick={() => setActiveCartItemId(activeCartItemId === item.id ? null : item.id)}
-                    className={`flex items-center justify-between group p-2 rounded-xl cursor-pointer transition-colors ${activeCartItemId === item.id ? 'bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-200 dark:ring-orange-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                    onClick={() => setActiveCartItemId(activeCartItemId === item.cartItemId ? null : item.cartItemId)}
+                    className={`flex items-center justify-between group p-2 rounded-xl cursor-pointer transition-colors ${activeCartItemId === item.cartItemId ? 'bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-200 dark:ring-orange-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-slate-400 font-bold text-sm">{index + 1}</span>
@@ -276,7 +284,7 @@ export default function POSScreen({ language }: POSScreenProps) {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          removeFromCart(item.id);
+                          removeFromCart(item.cartItemId);
                         }}
                         className="text-slate-300 hover:text-red-500 transition-colors"
                       >
@@ -286,7 +294,7 @@ export default function POSScreen({ language }: POSScreenProps) {
                   </div>
                   
                   {/* Expandable details for the active item */}
-                  {activeCartItemId === item.id && (
+                  {activeCartItemId === item.cartItemId && (
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
@@ -294,27 +302,27 @@ export default function POSScreen({ language }: POSScreenProps) {
                     >
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-slate-400">Quantity</label>
+                          <label className="text-[10px] font-bold uppercase text-slate-400">{t.quantity}</label>
                           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1">
-                            <button onClick={() => updateQuantity(item.id, -1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Minus size={14}/></button>
+                            <button onClick={() => updateQuantity(item.cartItemId, -1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Minus size={14}/></button>
                             <input 
                               type="number" 
                               className="w-full text-center font-bold text-sm bg-transparent outline-none dark:text-white" 
                               value={item.quantity}
-                              onChange={(e) => setItemQuantity(item.id, parseInt(e.target.value) || 0)}
+                              onChange={(e) => setItemQuantity(item.cartItemId, parseInt(e.target.value) || 0)}
                             />
-                            <button onClick={() => updateQuantity(item.id, 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Plus size={14}/></button>
+                            <button onClick={() => updateQuantity(item.cartItemId, 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Plus size={14}/></button>
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-slate-400">Unit Price ($)</label>
+                          <label className="text-[10px] font-bold uppercase text-slate-400">{t.unitPrice} ($)</label>
                           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2">
                             <input 
                               type="number" 
                               step="0.01"
                               className="w-full text-right font-bold text-sm bg-transparent outline-none dark:text-white" 
                               value={item.price}
-                              onChange={(e) => setItemPrice(item.id, parseFloat(e.target.value) || 0)}
+                              onChange={(e) => setItemPrice(item.cartItemId, parseFloat(e.target.value) || 0)}
                             />
                           </div>
                         </div>
@@ -329,15 +337,15 @@ export default function POSScreen({ language }: POSScreenProps) {
           {/* Summary */}
           <div className="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-medium">Subtotal</span>
+              <span className="text-slate-500 font-medium">{t.subtotal}</span>
               <span className="font-bold dark:text-white">${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-medium">Tax</span>
+              <span className="text-slate-500 font-medium">{t.tax}</span>
               <span className="font-bold dark:text-white">${tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-lg pt-2 border-t border-slate-200 dark:border-slate-700">
-              <span className="font-black dark:text-white">Payable Amount</span>
+              <span className="font-black dark:text-white">{t.payableAmount}</span>
               <span className="font-black text-orange-600 dark:text-orange-400">${total.toFixed(2)}</span>
             </div>
 
@@ -348,27 +356,27 @@ export default function POSScreen({ language }: POSScreenProps) {
                 className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${paymentMethod === 'cash' ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-600' : 'text-slate-400'}`}
               >
                 <Banknote size={18} />
-                <span>Cash</span>
+                <span>{t.cash}</span>
               </button>
               <button 
                 onClick={() => setPaymentMethod('card')}
                 className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${paymentMethod === 'card' ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-600' : 'text-slate-400'}`}
               >
                 <CreditCard size={18} />
-                <span>Card</span>
+                <span>{t.card}</span>
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-2">
               <button className="flex items-center justify-center gap-2 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold shadow-lg shadow-orange-100 transition-all">
-                <motion.div whileTap={{ scale: 0.9 }}>Hold Order</motion.div>
+                <motion.div whileTap={{ scale: 0.9 }}>{t.holdOrder}</motion.div>
               </button>
               <button 
                 onClick={() => handleCheckout(paymentMethod)}
                 disabled={cart.length === 0 || isProcessing}
                 className="flex items-center justify-center gap-2 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 transition-all"
               >
-                <motion.div whileTap={{ scale: 0.9 }}>Proceed</motion.div>
+                <motion.div whileTap={{ scale: 0.9 }}>{t.proceed}</motion.div>
               </button>
             </div>
           </div>
@@ -387,7 +395,7 @@ export default function POSScreen({ language }: POSScreenProps) {
               {cart.reduce((sum, item) => sum + item.quantity, 0)}
             </span>
           )}
-          <span>View Cart</span>
+          <span>{t.viewCart}</span>
         </button>
       )}
 

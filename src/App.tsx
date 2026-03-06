@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import DashboardScreen from './components/Dashboard/DashboardScreen';
 import POSScreen from './components/POS/POSScreen';
 import InventoryScreen from './components/Inventory/InventoryScreen';
+import ReportsScreen from './components/Reports/ReportsScreen';
 import SettingsScreen from './components/Settings/SettingsScreen';
 import { User, Language } from './types';
 import { storageService } from './services/storageService';
@@ -55,6 +56,8 @@ export default function App() {
         return <POSScreen language={language} />;
       case 'inventory':
         return <InventoryScreen language={language} />;
+      case 'reports':
+        return <ReportsScreen language={language} />;
       case 'settings':
         return <SettingsScreen language={language} />;
       default:

@@ -11,8 +11,8 @@ import {
   X,
   Upload
 } from 'lucide-react';
-import { Product, Language } from '../../types';
-import { TRANSLATIONS, CATEGORIES } from '../../constants';
+import { Product, Language, Category } from '../../types';
+import { TRANSLATIONS } from '../../constants';
 import { storageService } from '../../services/storageService';
 
 interface InventoryScreenProps {
@@ -21,6 +21,7 @@ interface InventoryScreenProps {
 
 export default function InventoryScreen({ language }: InventoryScreenProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,11 +32,17 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = () => {
     const data = storageService.getProducts();
     setProducts(data);
+  };
+
+  const fetchCategories = () => {
+    const data = storageService.getCategories();
+    setCategories(data);
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -74,7 +81,8 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
         </div>
         <button
           onClick={() => {
-            setEditingProduct({ name: '', price: 0, stock: 0, category: 'Grocery' });
+            const firstCategory = categories.length > 0 ? categories[0].name : 'Grocery';
+            setEditingProduct({ name: '', price: 0, stock: 0, category: firstCategory });
             setIsModalOpen(true);
           }}
           className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg shadow-orange-200 dark:shadow-none transition-all"
@@ -104,7 +112,7 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
                   <td className="px-4 py-2">
                     <div>
                       <p className="font-bold text-xs dark:text-white">{product.name}</p>
-                      <p className="text-[10px] text-slate-500">{product.barcode || 'No barcode'}</p>
+                      <p className="text-[10px] text-slate-500">{product.barcode || t.noBarcode}</p>
                     </div>
                   </td>
                   <td className="px-4 py-2">
@@ -159,8 +167,8 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
             <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 size={32} />
             </div>
-            <h3 className="text-xl font-bold dark:text-white mb-2">Delete Product?</h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-6">Are you sure you want to delete this product? This action cannot be undone.</p>
+            <h3 className="text-xl font-bold dark:text-white mb-2">{t.deleteProductConfirm}</h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">{t.deleteProductDesc}</p>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setDeleteConfirmId(null)}
@@ -207,11 +215,11 @@ export default function InventoryScreen({ language }: InventoryScreenProps) {
                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">{t.category}</label>
                   <select
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                    value={editingProduct?.category || 'Grocery'}
+                    value={editingProduct?.category || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct!, category: e.target.value })}
                   >
-                    {CATEGORIES.filter(c => c !== 'All').map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{isRTL ? cat.nameAr : cat.name}</option>
                     ))}
                   </select>
                 </div>

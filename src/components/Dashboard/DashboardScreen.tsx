@@ -94,10 +94,10 @@ export default function DashboardScreen({ language }: DashboardScreenProps) {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-base dark:text-white flex items-center gap-2">
               <Clock size={18} className="text-indigo-600" />
-              {isRTL ? 'المبيعات الأخيرة' : 'Recent Sales'}
+              {t.recentSales}
             </h3>
             <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700">
-              {isRTL ? 'عرض الكل' : 'View All'}
+              {t.viewAll}
             </button>
           </div>
           <div className="space-y-3">
@@ -135,7 +135,7 @@ export default function DashboardScreen({ language }: DashboardScreenProps) {
                 <Package size={24} />
               </div>
               <p className="text-xs text-slate-500">
-                {isRTL ? 'جميع المنتجات متوفرة بشكل جيد' : 'All products are well stocked'}
+                {t.allStocked}
               </p>
             </div>
           </div>

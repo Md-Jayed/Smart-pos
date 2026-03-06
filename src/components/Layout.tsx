@@ -14,8 +14,9 @@ import {
   Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Language, User } from '../types';
+import { Language, User, StoreInfo } from '../types';
 import { TRANSLATIONS } from '../constants';
+import { storageService } from '../services/storageService';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -42,8 +43,14 @@ export default function Layout({
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [storeInfo, setStoreInfo] = useState<StoreInfo>(storageService.getStoreInfo());
   const t = TRANSLATIONS[language];
   const isRTL = language === 'ar';
+
+  useEffect(() => {
+    // Refresh store info when active tab changes (in case settings were saved)
+    setStoreInfo(storageService.getStoreInfo());
+  }, [activeTab]);
 
   const menuItems = [
     { id: 'pos', icon: LayoutDashboard, label: t.dashboard, roles: ['admin', 'cashier'] },
@@ -75,7 +82,15 @@ export default function Layout({
           ${isSidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} md:translate-x-0`}
       >
         <div className="p-4 flex items-center justify-center border-b border-slate-200 dark:border-slate-800">
-          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-orange-200">R</div>
+          {storeInfo.logoUrl ? (
+            <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex items-center justify-center border border-slate-100 dark:border-slate-800">
+              <img src={storeInfo.logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" referrerPolicy="no-referrer" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-orange-200">
+              {storeInfo.logoText ? storeInfo.logoText.charAt(0).toUpperCase() : 'R'}
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 p-2 space-y-4 mt-4">
@@ -120,7 +135,7 @@ export default function Layout({
             </button>
 
             <h1 className="text-xl font-black dark:text-white tracking-tight shrink-0">
-              Restro <span className="text-orange-500">POS</span>
+              {storeInfo.logoText || 'Restro'} <span className="text-orange-500">{storeInfo.logoText ? '' : 'POS'}</span>
             </h1>
             
             <div className={`relative max-w-md w-full ml-8 ${isSearchOpen ? 'flex fixed inset-x-0 top-0 p-4 bg-white dark:bg-slate-900 z-50 md:relative md:p-0 md:bg-transparent' : 'hidden md:block'}`}>
@@ -154,8 +169,18 @@ export default function Layout({
                   <LayoutDashboard size={20} />
                 </motion.div>
               </button>
-              <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400">
-                <Sun size={20} />
+              <button 
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400"
+              >
+                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+              <button 
+                onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-orange-500 flex items-center gap-2"
+              >
+                <Languages size={20} />
+                <span className="text-xs font-bold uppercase">{language === 'en' ? 'Ar' : 'En'}</span>
               </button>
             </div>
             

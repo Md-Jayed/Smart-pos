@@ -18,7 +18,28 @@ export interface Product {
 }
 
 export interface CartItem extends Product {
+  cartItemId: string;
   quantity: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  nameAr: string;
+}
+
+export interface StoreInfo {
+  name: string;
+  nameAr: string;
+  crNumber: string;
+  vatNumber: string;
+  address: string;
+  addressAr: string;
+  phone: string;
+  thankYou: string;
+  thankYouAr: string;
+  logoUrl?: string;
+  logoText?: string;
 }
 
 export interface Sale {

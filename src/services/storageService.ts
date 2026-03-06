@@ -1,11 +1,12 @@
-import { Product, Sale, DashboardStats } from '../types';
+import { Product, Sale, DashboardStats, StoreInfo, Category } from '../types';
 import { VAT_RATE } from '../constants';
 
 const PRODUCTS_KEY = 'smartpos_products';
 const SALES_KEY = 'smartpos_sales';
 const STORE_INFO_KEY = 'smartpos_store_info';
+const CATEGORIES_KEY = 'smartpos_categories';
 
-const DEFAULT_STORE_INFO = {
+const DEFAULT_STORE_INFO: StoreInfo = {
   name: "SmartPOS Retail",
   nameAr: "سمارت بوس للتجزئة",
   crNumber: "1234567890",
@@ -15,7 +16,18 @@ const DEFAULT_STORE_INFO = {
   phone: "+966 50 000 0000",
   thankYou: "Thank you for shopping with us!",
   thankYouAr: "شكراً لتسوقكم معنا!",
+  logoText: "SmartPOS",
+  logoUrl: "",
 };
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: '1', name: 'Grocery', nameAr: 'بقالة' },
+  { id: '2', name: 'Beverages', nameAr: 'مشروبات' },
+  { id: '3', name: 'Snacks', nameAr: 'وجبات خفيفة' },
+  { id: '4', name: 'Electronics', nameAr: 'إلكترونيات' },
+  { id: '5', name: 'Household', nameAr: 'أدوات منزلية' },
+  { id: '6', name: 'Personal Care', nameAr: 'عناية شخصية' }
+];
 
 const SEED_PRODUCTS: Product[] = [
   { id: 1, name: "Fresh Milk 1L", sku: "MILK-001", barcode: "6281234567890", category: "Grocery", price: 6.50, cost_price: 4.50, stock: 50, image_url: "https://picsum.photos/seed/milk/400/400" },
@@ -36,15 +48,49 @@ export const storageService = {
     if (!localStorage.getItem(STORE_INFO_KEY)) {
       localStorage.setItem(STORE_INFO_KEY, JSON.stringify(DEFAULT_STORE_INFO));
     }
+    if (!localStorage.getItem(CATEGORIES_KEY)) {
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
+    }
+  },
+
+  // Categories
+  getCategories: (): Category[] => {
+    const data = localStorage.getItem(CATEGORIES_KEY);
+    return data ? JSON.parse(data) : DEFAULT_CATEGORIES;
+  },
+
+  saveCategory: (category: Partial<Category>): Category => {
+    const categories = storageService.getCategories();
+    let newCategory: Category;
+
+    if (category.id) {
+      const index = categories.findIndex(c => c.id === category.id);
+      newCategory = { ...categories[index], ...category } as Category;
+      categories[index] = newCategory;
+    } else {
+      newCategory = {
+        ...category,
+        id: Date.now().toString(),
+      } as Category;
+      categories.push(newCategory);
+    }
+
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+    return newCategory;
+  },
+
+  deleteCategory: (id: string) => {
+    const categories = storageService.getCategories().filter(c => c.id !== id);
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
   },
 
   // Store Info
-  getStoreInfo: () => {
+  getStoreInfo: (): StoreInfo => {
     const data = localStorage.getItem(STORE_INFO_KEY);
     return data ? JSON.parse(data) : DEFAULT_STORE_INFO;
   },
 
-  saveStoreInfo: (info: any) => {
+  saveStoreInfo: (info: StoreInfo) => {
     localStorage.setItem(STORE_INFO_KEY, JSON.stringify(info));
   },
 
