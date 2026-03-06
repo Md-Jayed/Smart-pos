@@ -83,7 +83,14 @@ export default function Receipt({ sale, language }: ReceiptProps) {
 
       <div className="text-center mt-6 pt-4 border-t border-black border-dashed">
         <p className="mb-1">{storeInfo.thankYou}</p>
-        <p>{storeInfo.thankYouAr}</p>
+        <p className="mb-4">{storeInfo.thankYouAr}</p>
+        
+        <div className="pt-4 border-t border-black border-dotted text-[10px] space-y-1">
+          <p>Exchange or Return within 2 days</p>
+          <p>الاستبدال أو الاسترجاع خلال يومين</p>
+          <p className="pt-2">Please keep this receipt</p>
+          <p>يرجى الاحتفاظ بالفاتورة</p>
+        </div>
       </div>
     </div>
   );
