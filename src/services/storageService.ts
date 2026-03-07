@@ -213,5 +213,80 @@ export const storageService = {
       totalOrders, 
       lowStock 
     };
+  },
+
+  getSalesChartData: (period: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
+    const sales = storageService.getSales();
+    const now = new Date();
+    const data: { name: string, sales: number }[] = [];
+
+    if (period === 'daily') {
+      // Last 24 hours
+      for (let i = 23; i >= 0; i--) {
+        const d = new Date(now);
+        d.setHours(now.getHours() - i);
+        const hourStr = d.getHours().toString().padStart(2, '0') + ':00';
+        const hourlySales = sales
+          .filter(s => {
+            const saleDate = new Date(s.date);
+            return saleDate.getHours() === d.getHours() && 
+                   saleDate.getDate() === d.getDate() &&
+                   saleDate.getMonth() === d.getMonth() &&
+                   saleDate.getFullYear() === d.getFullYear();
+          })
+          .reduce((sum, s) => sum + s.total, 0);
+        data.push({ name: hourStr, sales: hourlySales });
+      }
+    } else if (period === 'weekly') {
+      // Last 7 days
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const dailySales = sales
+          .filter(s => {
+            const saleDate = new Date(s.date);
+            return saleDate.getDate() === d.getDate() &&
+                   saleDate.getMonth() === d.getMonth() &&
+                   saleDate.getFullYear() === d.getFullYear();
+          })
+          .reduce((sum, s) => sum + s.total, 0);
+        data.push({ name: dayStr, sales: dailySales });
+      }
+    } else if (period === 'monthly') {
+      // Last 30 days
+      for (let i = 29; i >= 0; i -= 5) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const dateStr = (d.getMonth() + 1) + '/' + d.getDate();
+        const periodSales = sales
+          .filter(s => {
+            const saleDate = new Date(s.date);
+            const diffTime = Math.abs(now.getTime() - saleDate.getTime());
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+            return diffDays >= i && diffDays < i + 5;
+          })
+          .reduce((sum, s) => sum + s.total, 0);
+        data.push({ name: dateStr, sales: periodSales });
+      }
+      data.reverse();
+    } else if (period === 'yearly') {
+      // 12 months
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now);
+        d.setMonth(now.getMonth() - i);
+        const monthStr = d.toLocaleDateString('en-US', { month: 'short' });
+        const monthlySales = sales
+          .filter(s => {
+            const saleDate = new Date(s.date);
+            return saleDate.getMonth() === d.getMonth() &&
+                   saleDate.getFullYear() === d.getFullYear();
+          })
+          .reduce((sum, s) => sum + s.total, 0);
+        data.push({ name: monthStr, sales: monthlySales });
+      }
+    }
+
+    return data;
   }
 };
