@@ -120,6 +120,14 @@ export const TRANSLATIONS = {
     weekly: "Weekly",
     monthly: "Monthly",
     yearly: "Yearly",
+    clearReports: "Clear Reports",
+    clearReportsConfirm: "Are you sure you want to clear all sales reports? This action cannot be undone.",
+    exportSales: "Export Sales",
+    dailySalesList: "Daily Sales List",
+    invoice: "Invoice",
+    date: "Date",
+    amount: "Amount",
+    method: "Method",
   },
   ar: {
     dashboard: "لوحة التحكم",
@@ -218,5 +226,13 @@ export const TRANSLATIONS = {
     weekly: "أسبوعي",
     monthly: "شهري",
     yearly: "سنوي",
+    clearReports: "مسح التقارير",
+    clearReportsConfirm: "هل أنت متأكد أنك تريد مسح جميع تقارير المبيعات؟ لا يمكن التراجع عن هذا الإجراء.",
+    exportSales: "تصدير المبيعات",
+    dailySalesList: "قائمة المبيعات اليومية",
+    invoice: "الفاتورة",
+    date: "التاريخ",
+    amount: "المبلغ",
+    method: "الطريقة",
   }
 };

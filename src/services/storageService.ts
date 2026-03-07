@@ -288,5 +288,9 @@ export const storageService = {
     }
 
     return data;
+  },
+
+  clearSales: () => {
+    localStorage.setItem(SALES_KEY, JSON.stringify([]));
   }
 };
