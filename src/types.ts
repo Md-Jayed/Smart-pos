@@ -20,6 +20,8 @@ export interface Product {
 export interface CartItem extends Product {
   cartItemId: string;
   quantity: number;
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
 }
 
 export interface Category {
@@ -49,8 +51,11 @@ export interface Sale {
   subtotal: number;
   vat: number;
   total: number;
-  payment_method: 'cash' | 'card';
+  payment_method: 'cash' | 'card' | 'split';
+  cash_amount?: number;
+  card_amount?: number;
   cashier_id: number;
+  items: CartItem[];
 }
 
 export interface SaleItem {
@@ -59,6 +64,7 @@ export interface SaleItem {
   product_id: number;
   quantity: number;
   price: number;
+  discount_amount?: number;
 }
 
 export interface DashboardStats {

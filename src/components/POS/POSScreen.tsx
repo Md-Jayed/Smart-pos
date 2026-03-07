@@ -34,7 +34,9 @@ export default function POSScreen({ language }: POSScreenProps) {
   const [lastSale, setLastSale] = useState<any>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [activeCartItemId, setActiveCartItemId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'split'>('cash');
+  const [cashAmount, setCashAmount] = useState<number>(0);
+  const [cardAmount, setCardAmount] = useState<number>(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   const t = TRANSLATIONS[language];
@@ -102,13 +104,41 @@ export default function POSScreen({ language }: POSScreenProps) {
     setCart(prev => prev.filter(item => item.cartItemId !== cartItemId));
   };
 
-  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const setItemDiscount = (cartItemId: string, type: 'percentage' | 'fixed', value: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.cartItemId === cartItemId) {
+        return { ...item, discountType: type, discountValue: value };
+      }
+      return item;
+    }));
+  };
+
+  const calculateItemTotal = (item: CartItem) => {
+    const itemSubtotal = item.price * item.quantity;
+    if (!item.discountValue) return itemSubtotal;
+    
+    if (item.discountType === 'percentage') {
+      return itemSubtotal * (1 - item.discountValue / 100);
+    } else {
+      return Math.max(0, itemSubtotal - item.discountValue);
+    }
+  };
+
+  const total = cart.reduce((sum, item) => sum + calculateItemTotal(item), 0);
   const subtotal = total / (1 + VAT_RATE);
   const tax = total - subtotal;
   const vat = total - subtotal;
 
-  const handleCheckout = (method: 'cash' | 'card') => {
+  const handleCheckout = (method: 'cash' | 'card' | 'split') => {
     if (cart.length === 0) return;
+
+    if (method === 'split') {
+      const totalPaid = cashAmount + cardAmount;
+      if (Math.abs(totalPaid - total) > 0.01) {
+        alert(isRTL ? 'يجب أن يكون مجموع المبالغ مساوياً لإجمالي الفاتورة' : 'Total split amounts must equal the total payable amount');
+        return;
+      }
+    }
     
     setIsProcessing(true);
     try {
@@ -118,11 +148,24 @@ export default function POSScreen({ language }: POSScreenProps) {
         vat,
         total,
         payment_method: method,
+        cash_amount: method === 'split' ? cashAmount : (method === 'cash' ? total : 0),
+        card_amount: method === 'split' ? cardAmount : (method === 'card' ? total : 0),
         cashier_id: 1
       });
       
-      setLastSale({ ...sale, items: cart, subtotal, vat, total, payment_method: method });
+      setLastSale({ 
+        ...sale, 
+        items: cart, 
+        subtotal, 
+        vat, 
+        total, 
+        payment_method: method,
+        cash_amount: method === 'split' ? cashAmount : (method === 'cash' ? total : 0),
+        card_amount: method === 'split' ? cardAmount : (method === 'card' ? total : 0)
+      });
       setCart([]);
+      setCashAmount(0);
+      setCardAmount(0);
       setShowReceipt(true);
       fetchProducts(); // Refresh stock
     } catch (err) {
@@ -280,7 +323,16 @@ export default function POSScreen({ language }: POSScreenProps) {
                       <h4 className="text-sm font-bold dark:text-white">{item.name}</h4>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-sm font-black dark:text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                      <div className="text-right">
+                        {item.discountValue ? (
+                          <>
+                            <p className="text-[10px] text-slate-400 line-through">${(item.price * item.quantity).toFixed(2)}</p>
+                            <p className="text-sm font-black text-emerald-500">${calculateItemTotal(item).toFixed(2)}</p>
+                          </>
+                        ) : (
+                          <span className="text-sm font-black dark:text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                        )}
+                      </div>
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -298,31 +350,57 @@ export default function POSScreen({ language }: POSScreenProps) {
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4 overflow-hidden"
+                      className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3 overflow-hidden"
                     >
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* Quantity */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-slate-400">{t.quantity}</label>
-                          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1">
-                            <button onClick={() => updateQuantity(item.cartItemId, -1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Minus size={14}/></button>
+                          <label className="text-[9px] font-bold uppercase text-slate-400">{t.quantity}</label>
+                          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5">
+                            <button onClick={() => updateQuantity(item.cartItemId, -1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400"><Minus size={12}/></button>
                             <input 
                               type="number" 
-                              className="w-full text-center font-bold text-sm bg-transparent outline-none dark:text-white" 
+                              className="w-full text-center font-bold text-xs bg-transparent outline-none dark:text-white" 
                               value={item.quantity}
                               onChange={(e) => setItemQuantity(item.cartItemId, parseInt(e.target.value) || 0)}
                             />
-                            <button onClick={() => updateQuantity(item.cartItemId, 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><Plus size={14}/></button>
+                            <button onClick={() => updateQuantity(item.cartItemId, 1)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-400"><Plus size={12}/></button>
                           </div>
                         </div>
+
+                        {/* Price */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase text-slate-400">{t.unitPrice} ($)</label>
-                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2">
+                          <label className="text-[9px] font-bold uppercase text-slate-400">{t.unitPrice}</label>
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
                             <input 
                               type="number" 
                               step="0.01"
-                              className="w-full text-right font-bold text-sm bg-transparent outline-none dark:text-white" 
+                              className="w-full text-right font-bold text-xs bg-transparent outline-none dark:text-white" 
                               value={item.price}
                               onChange={(e) => setItemPrice(item.cartItemId, parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Discount */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[9px] font-bold uppercase text-slate-400">{t.discount}</label>
+                            <button 
+                              onClick={() => setItemDiscount(item.cartItemId, item.discountType === 'percentage' ? 'fixed' : 'percentage', item.discountValue || 0)}
+                              className="text-[9px] font-black text-orange-500 hover:text-orange-600"
+                            >
+                              {item.discountType === 'percentage' ? '%' : '$'}
+                            </button>
+                          </div>
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
+                            <input 
+                              type="number" 
+                              step="0.01"
+                              placeholder="0"
+                              className="w-full text-right font-bold text-xs bg-transparent outline-none dark:text-white" 
+                              value={item.discountValue || ''}
+                              onChange={(e) => setItemDiscount(item.cartItemId, item.discountType || 'percentage', parseFloat(e.target.value) || 0)}
                             />
                           </div>
                         </div>
@@ -350,22 +428,70 @@ export default function POSScreen({ language }: POSScreenProps) {
             </div>
 
             {/* Payment Method Selector */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
+            <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
               <button 
                 onClick={() => setPaymentMethod('cash')}
                 className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${paymentMethod === 'cash' ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-600' : 'text-slate-400'}`}
               >
                 <Banknote size={18} />
-                <span>{t.cash}</span>
+                <span className="text-xs">{t.cash}</span>
               </button>
               <button 
                 onClick={() => setPaymentMethod('card')}
                 className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${paymentMethod === 'card' ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-600' : 'text-slate-400'}`}
               >
                 <CreditCard size={18} />
-                <span>{t.card}</span>
+                <span className="text-xs">{t.card}</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setPaymentMethod('split');
+                  setCashAmount(total / 2);
+                  setCardAmount(total / 2);
+                }}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all ${paymentMethod === 'split' ? 'bg-white dark:bg-slate-800 shadow-sm text-orange-600' : 'text-slate-400'}`}
+              >
+                <LayoutDashboard size={18} />
+                <span className="text-xs">{t.split}</span>
               </button>
             </div>
+
+            {paymentMethod === 'split' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-2 gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
+              >
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-400">{t.cashAmount}</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm outline-none dark:text-white"
+                    value={cashAmount}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setCashAmount(val);
+                      setCardAmount(Math.max(0, total - val));
+                    }}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-400">{t.cardAmount}</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm outline-none dark:text-white"
+                    value={cardAmount}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setCardAmount(val);
+                      setCashAmount(Math.max(0, total - val));
+                    }}
+                  />
+                </div>
+              </motion.div>
+            )}
 
             <div className="grid grid-cols-2 gap-4 pt-2">
               <button className="flex items-center justify-center gap-2 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold shadow-lg shadow-orange-100 transition-all">

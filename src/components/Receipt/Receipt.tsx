@@ -43,8 +43,24 @@ export default function Receipt({ sale, language }: ReceiptProps) {
         </div>
         <div className="flex justify-between">
           <span>Method:</span>
-          <span className="uppercase">{sale.payment_method}</span>
+          <span className="uppercase">
+            {sale.payment_method === 'split' 
+              ? (isRTL ? 'مقسم (نقدي + بطاقة)' : 'Split (Cash + Card)')
+              : sale.payment_method}
+          </span>
         </div>
+        {sale.payment_method === 'split' && (
+          <>
+            <div className="flex justify-between text-[10px] pl-4">
+              <span>- {isRTL ? 'نقداً' : 'Cash'}:</span>
+              <span>{sale.cash_amount?.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[10px] pl-4">
+              <span>- {isRTL ? 'بطاقة' : 'Card'}:</span>
+              <span>{sale.card_amount?.toFixed(2)}</span>
+            </div>
+          </>
+        )}
       </div>
 
       <table className="w-full mb-4">
@@ -56,13 +72,41 @@ export default function Receipt({ sale, language }: ReceiptProps) {
           </tr>
         </thead>
         <tbody>
-          {sale.items.map((item: any) => (
-            <tr key={item.cartItemId || item.id}>
-              <td className="py-1">{item.name}</td>
-              <td className="text-center py-1">{item.quantity}</td>
-              <td className="text-right py-1">{(item.price * item.quantity).toFixed(2)}</td>
-            </tr>
-          ))}
+          {sale.items.map((item: any) => {
+            const itemSubtotal = item.price * item.quantity;
+            let discountedPrice = itemSubtotal;
+            let discountDisplay = '';
+            
+            if (item.discountValue) {
+              if (item.discountType === 'percentage') {
+                discountedPrice = itemSubtotal * (1 - item.discountValue / 100);
+                discountDisplay = `(-${item.discountValue}%)`;
+              } else {
+                discountedPrice = Math.max(0, itemSubtotal - item.discountValue);
+                discountDisplay = `(-${item.discountValue.toFixed(2)})`;
+              }
+            }
+
+            return (
+              <React.Fragment key={item.cartItemId || item.id}>
+                <tr>
+                  <td className="py-1">{item.name}</td>
+                  <td className="text-center py-1">{item.quantity}</td>
+                  <td className="text-right py-1">{itemSubtotal.toFixed(2)}</td>
+                </tr>
+                {item.discountValue && (
+                  <tr className="text-[10px] italic">
+                    <td colSpan={2} className="pb-1 pl-2">
+                      {isRTL ? 'خصم' : 'Discount'} {discountDisplay}
+                    </td>
+                    <td className="text-right pb-1">
+                      -{(itemSubtotal - discountedPrice).toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
 
