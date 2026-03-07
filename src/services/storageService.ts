@@ -164,15 +164,54 @@ export const storageService = {
   getStats: (): DashboardStats => {
     const products = storageService.getProducts();
     const sales = storageService.getSales();
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    
+    // Helper to check if a date is within the last N days
+    const isWithinDays = (dateStr: string, days: number) => {
+      const date = new Date(dateStr);
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      return diffDays <= days;
+    };
+
+    // Helper to check if a date is in the same month/year
+    const isSameMonth = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    };
+
+    const isSameYear = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.getFullYear() === now.getFullYear();
+    };
 
     const todaySales = sales
-      .filter(s => s.date.startsWith(today))
+      .filter(s => s.date.startsWith(todayStr))
       .reduce((sum, s) => sum + s.total, 0);
 
-    const totalOrders = sales.filter(s => s.date.startsWith(today)).length;
+    const weeklySales = sales
+      .filter(s => isWithinDays(s.date, 7))
+      .reduce((sum, s) => sum + s.total, 0);
+
+    const monthlySales = sales
+      .filter(s => isSameMonth(s.date))
+      .reduce((sum, s) => sum + s.total, 0);
+
+    const yearlySales = sales
+      .filter(s => isSameYear(s.date))
+      .reduce((sum, s) => sum + s.total, 0);
+
+    const totalOrders = sales.filter(s => s.date.startsWith(todayStr)).length;
     const lowStock = products.filter(p => p.stock < 10).length;
 
-    return { todaySales, totalOrders, lowStock };
+    return { 
+      todaySales, 
+      weeklySales, 
+      monthlySales, 
+      yearlySales, 
+      totalOrders, 
+      lowStock 
+    };
   }
 };

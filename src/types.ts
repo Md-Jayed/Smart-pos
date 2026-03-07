@@ -69,6 +69,9 @@ export interface SaleItem {
 
 export interface DashboardStats {
   todaySales: number;
+  weeklySales: number;
+  monthlySales: number;
+  yearlySales: number;
   totalOrders: number;
   lowStock: number;
 }

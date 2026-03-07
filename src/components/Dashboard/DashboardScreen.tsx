@@ -19,7 +19,14 @@ interface DashboardScreenProps {
 }
 
 export default function DashboardScreen({ language }: DashboardScreenProps) {
-  const [stats, setStats] = useState<DashboardStats>({ todaySales: 0, totalOrders: 0, lowStock: 0 });
+  const [stats, setStats] = useState<DashboardStats>({ 
+    todaySales: 0, 
+    weeklySales: 0,
+    monthlySales: 0,
+    yearlySales: 0,
+    totalOrders: 0, 
+    lowStock: 0 
+  });
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const t = TRANSLATIONS[language];
   const isRTL = language === 'ar';
@@ -43,10 +50,34 @@ export default function DashboardScreen({ language }: DashboardScreenProps) {
       trendUp: true
     },
     { 
+      label: t.weeklySales, 
+      value: `${stats.weeklySales.toFixed(2)} SAR`, 
+      icon: TrendingUp, 
+      color: 'bg-blue-500',
+      trend: '+8.2%',
+      trendUp: true
+    },
+    { 
+      label: t.monthlySales, 
+      value: `${stats.monthlySales.toFixed(2)} SAR`, 
+      icon: TrendingUp, 
+      color: 'bg-indigo-500',
+      trend: '+15.4%',
+      trendUp: true
+    },
+    { 
+      label: t.yearlySales, 
+      value: `${stats.yearlySales.toFixed(2)} SAR`, 
+      icon: TrendingUp, 
+      color: 'bg-purple-500',
+      trend: '+22.1%',
+      trendUp: true
+    },
+    { 
       label: t.totalOrders, 
       value: stats.totalOrders.toString(), 
       icon: ShoppingBag, 
-      color: 'bg-indigo-500',
+      color: 'bg-slate-500',
       trend: '+5.2%',
       trendUp: true
     },
@@ -63,7 +94,7 @@ export default function DashboardScreen({ language }: DashboardScreenProps) {
   return (
     <div className="space-y-4">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {statCards.map((card, idx) => (
           <motion.div
             key={idx}
@@ -72,18 +103,14 @@ export default function DashboardScreen({ language }: DashboardScreenProps) {
             transition={{ delay: idx * 0.1 }}
             className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group"
           >
-            <div className={`absolute top-0 right-0 w-24 h-24 ${card.color} opacity-[0.03] rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110`} />
+            <div className={`absolute top-0 right-0 w-16 h-16 ${card.color} opacity-[0.03] rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`} />
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 ${card.color} bg-opacity-10 rounded-xl flex items-center justify-center`}>
-                <card.icon className={card.color.replace('bg-', 'text-')} size={20} />
-              </div>
-              <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${card.trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                {card.trendUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                {card.trend}
+              <div className={`w-8 h-8 ${card.color} bg-opacity-10 rounded-lg flex items-center justify-center`}>
+                <card.icon className={card.color.replace('bg-', 'text-')} size={16} />
               </div>
             </div>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">{card.label}</p>
-            <h3 className="text-xl font-bold dark:text-white">{card.value}</h3>
+            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5 truncate">{card.label}</p>
+            <h3 className="text-sm font-bold dark:text-white truncate">{card.value}</h3>
           </motion.div>
         ))}
       </div>
